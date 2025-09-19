@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Časovače Hvězdné flotily</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            color: #00ff88;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #00ff88;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .timer-card {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .timer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 255, 136, 0.5);
+        }
+
+        .timer-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ff6b35;
+            text-shadow: 0 0 10px #ff6b35;
+        }
+
+        .display {
+            font-size: 3rem;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            text-shadow: 0 0 15px currentColor;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        input[type="number"], input[type="text"] {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin: 5px;
+            text-align: center;
+            width: 80px;
+        }
+
+        input[type="text"] {
+            width: 200px;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .preset-btn {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            font-size: 0.8rem;
+            padding: 8px 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #ff6b35);
+            border-radius: 4px;
+            transition: width 0.1s ease;
+        }
+
+        .alarm-flash {
+            animation: flash 0.5s infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { background-color: rgba(255, 0, 0, 0.1); }
+            50% { background-color: rgba(255, 0, 0, 0.3); }
+        }
+
+        .stopwatch-laps {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .lap-time {
+            padding: 5px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+            font-size: 0.9rem;
+        }
+
+        .world-clock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .world-time {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .sound-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        select {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ČASOVAČE HVĚZDNÉ FLOTILY 🚀</h1>
+        
+        <div class="sound-controls">
+            <label>Zvuk upozornění:</label>
+            <select id="soundSelect">
+                <option value="beep">Klasický pípák</option>
+                <option value="alarm">Alarm</option>
+                <option value="star_trek">Star Trek komunikátor</option>
+                <option value="ship">Lodní zvon</option>
+            </select>
+            <button onclick="testSound()">Testovat zvuk</button>
+        </div>
+
+        <div class="timer-grid">
+            <!-- Klasický odpočítávací časovač -->
+            <div class="timer-card" id="countdown-card">
+                <div class="timer-title">⏱️ ODPOČÍTÁVACÍ ČASOVAČ</div>
+                <div class="display" id="countdown-display">00:00:00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="countdown-progress"></div>
+                </div>
+                <div class="controls">
+                    <input type="number" id="countdown-hours" placeholder="H" min="0" max="23" value="0">
+                    <input type="number" id="countdown-minutes" placeholder="M" min="0" max="59" value="5">
+                    <input type="number" id="countdown-seconds" placeholder="S" min="0" max="59" value="0">
+                </div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setCountdown(0,1,0)">1 min</button>
+                    <button class="preset-btn" onclick="setCountdown(0,5,0)">5 min</button>
+                    <button class="preset-btn" onclick="setCountdown(0,10,0)">10 min</button>
+                    <button class="preset-btn" onclick="setCountdown(0,25,0)">Pomodoro</button>
+                    <button class="preset-btn" onclick="setCountdown(1,0,0)">1 hod</button>
+                </div>
+                <div class="controls">
+                    <button id="countdown-start" onclick="startCountdown()">START</button>
+                    <button id="countdown-pause" onclick="pauseCountdown()">PAUZA</button>
+                    <button id="countdown-reset" onclick="resetCountdown()">RESET</button>
+                </div>
+            </div>
+
+            <!-- Stopky -->
+            <div class="timer-card">
+                <div class="timer-title">⏱️ STOPKY</div>
+                <div class="display" id="stopwatch-display">00:00:00:000</div>
+                <div class="controls">
+                    <button id="stopwatch-start" onclick="startStopwatch()">START</button>
+                    <button id="stopwatch-pause" onclick="pauseStopwatch()">PAUZA</button>
+                    <button id="stopwatch-reset" onclick="resetStopwatch()">RESET</button>
+                    <button id="stopwatch-lap" onclick="lapStopwatch()">MEZIČAS</button>
+                </div>
+                <div class="stopwatch-laps" id="lap-times"></div>
+            </div>
+
+            <!-- Interval timer -->
+            <div class="timer-card">
+                <div class="timer-title">🔄 INTERVALOVÝ ČASOVAČ</div>
+                <div class="display" id="interval-display">PRÁCE: 00:00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="interval-progress"></div>
+                </div>
+                <div class="controls">
+                    <label>Práce:</label>
+                    <input type="number" id="work-minutes" min="1" max="60" value="25">
+                    <label>Pauza:</label>
+                    <input type="number" id="break-minutes" min="1" max="30" value="5">
+                </div>
+                <div class="controls">
+                    <label>Cykly:</label>
+                    <input type="number" id="total-cycles" min="1" max="20" value="4">
+                    <span id="cycle-counter">Cyklus: 0/4</span>
+                </div>
+                <div class="controls">
+                    <button id="interval-start" onclick="startInterval()">START</button>
+                    <button id="interval-pause" onclick="pauseInterval()">PAUZA</button>
+                    <button id="interval-reset" onclick="resetInterval()">RESET</button>
+                </div>
+            </div>
+
+            <!-- Světové hodiny -->
+            <div class="timer-card">
+                <div class="timer-title">🌍 SVĚTOVÉ HODINY</div>
+                <div class="world-clock-grid" id="world-clocks">
+                    <div class="world-time">
+                        <div>Praha</div>
+                        <div id="prague-time">--:--:--</div>
+                    </div>
+                    <div class="world-time">
+                        <div>Londýn</div>
+                        <div id="london-time">--:--:--</div>
+                    </div>
+                    <div class="world-time">
+                        <div>New York</div>
+                        <div id="newyork-time">--:--:--</div>
+                    </div>
+                    <div class="world-time">
+                        <div>Tokyo</div>
+                        <div id="tokyo-time">--:--:--</div>
+                    </div>
+                    <div class="world-time">
+                        <div>Sydney</div>
+                        <div id="sydney-time">--:--:--</div>
+                    </div>
+                    <div class="world-time">
+                        <div>Los Angeles</div>
+                        <div id="la-time">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pomodoro časovač -->
+            <div class="timer-card">
+                <div class="timer-title">🍅 POMODORO TECHNIKA</div>
+                <div class="display" id="pomodoro-display">25:00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="pomodoro-progress"></div>
+                </div>
+                <div id="pomodoro-status">PŘIPRAVEN NA PRÁCI</div>
+                <div class="controls">
+                    <span id="pomodoro-counter">Pomodoro: 0/4</span>
+                </div>
+                <div class="controls">
+                    <button id="pomodoro-start" onclick="startPomodoro()">START</button>
+                    <button id="pomodoro-pause" onclick="pausePomodoro()">PAUZA</button>
+                    <button id="pomodoro-reset" onclick="resetPomodoro()">RESET</button>
+                </div>
+            </div>
+
+            <!-- Vlastní alarmy -->
+            <div class="timer-card">
+                <div class="timer-title">⏰ VLASTNÍ ALARMY</div>
+                <div class="controls">
+                    <input type="text" id="alarm-name" placeholder="Název alarmu" value="Budík">
+                    <input type="time" id="alarm-time">
+                    <button onclick="addAlarm()">PŘIDAT</button>
+                </div>
+                <div id="alarm-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       // Globální proměnné - KOMPLETNÍ SEZNAM
+let countdownTimer = null;
+let countdownTime = 0;
+let countdownTotalTime = 0;
+
+// STOPKY - CHYBĚJÍCÍ PROMĚNNÉ (PŘIDEJ TYTO!)
+let stopwatchRunning = false;
+let stopwatchInterval = null;
+let stopwatchElapsed = 0;
+let stopwatchStartTime = 0;
+let lapNumber = 1;
+
+/*// Původní proměnné (můžeš smazat, pokud se nepoužívají)
+let stopwatchTimer = null;
+let stopwatchTime = 0;
+let lapCounter = 1;*/
+
+let intervalTimer = null;
+let intervalTime = 0;
+let intervalTotalTime = 0;
+let currentCycle = 0;
+let isWorkTime = true;
+let totalCycles = 4;
+
+let pomodoroTimer = null;
+let pomodoroTime = 25 * 60;
+let pomodoroTotalTime = 25 * 60;
+let pomodoroCount = 0;
+let pomodoroIsWork = true;
+
+let alarms = [];
+let alarmCheckTimer = null;
+        
+        // Zvukové efekty
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function createBeep(frequency = 800, duration = 200) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function playAlarmSound() {
+            const soundType = document.getElementById('soundSelect').value;
+            
+            switch(soundType) {
+                case 'beep':
+                    createBeep(800, 200);
+                    break;
+                case 'alarm':
+                    for(let i = 0; i < 5; i++) {
+                        setTimeout(() => createBeep(1000, 100), i * 150);
+                    }
+                    break;
+                case 'star_trek':
+                    createBeep(900, 100);
+                    setTimeout(() => createBeep(700, 100), 150);
+                    setTimeout(() => createBeep(1100, 150), 300);
+                    break;
+                case 'ship':
+                    for(let i = 0; i < 3; i++) {
+                        setTimeout(() => createBeep(400, 500), i * 600);
+                    }
+                    break;
+            }
+        }
+
+        function testSound() {
+            playAlarmSound();
+        }
+
+        // Funkce pro formátování času
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatTimeShort(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ODPOČÍTÁVACÍ ČASOVAČ
+        function setCountdown(hours, minutes, seconds) {
+            document.getElementById('countdown-hours').value = hours;
+            document.getElementById('countdown-minutes').value = minutes;
+            document.getElementById('countdown-seconds').value = seconds;
+        }
+
+        function startCountdown() {
+            if (countdownTimer) return;
+            
+            const hours = parseInt(document.getElementById('countdown-hours').value) || 0;
+            const minutes = parseInt(document.getElementById('countdown-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('countdown-seconds').value) || 0;
+            
+            if (countdownTime === 0) {
+                countdownTime = hours * 3600 + minutes * 60 + seconds;
+                countdownTotalTime = countdownTime;
+            }
+            
+            if (countdownTime <= 0) return;
+            
+            countdownTimer = setInterval(() => {
+                countdownTime--;
+                document.getElementById('countdown-display').textContent = formatTime(countdownTime);
+                
+                const progress = ((countdownTotalTime - countdownTime) / countdownTotalTime) * 100;
+                document.getElementById('countdown-progress').style.width = progress + '%';
+                
+                if (countdownTime <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    document.getElementById('countdown-card').classList.add('alarm-flash');
+                    playAlarmSound();
+                    setTimeout(() => {
+                        document.getElementById('countdown-card').classList.remove('alarm-flash');
+                    }, 3000);
+                }
+            }, 1000);
+        }
+
+        function pauseCountdown() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            countdownTime = 0;
+            countdownTotalTime = 0;
+            document.getElementById('countdown-display').textContent = '00:00:00';
+            document.getElementById('countdown-progress').style.width = '0%';
+            document.getElementById('countdown-card').classList.remove('alarm-flash');
+        }
+
+        // POMOCNÁ FUNKCE PRO FORMÁTOVÁNÍ STOPEK
+        function formatStopwatchTime(milliseconds) {
+            const totalMs = Math.floor(milliseconds);
+            const hours = Math.floor(totalMs / 3600000);
+            const minutes = Math.floor((totalMs % 3600000) / 60000);
+            const seconds = Math.floor((totalMs % 60000) / 1000);
+            const ms = totalMs % 1000;
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(3, '0')}`;
+        }
+
+        // STOPKY - KOMPLETNĚ NOVÝ KÓD
+        function startStopwatch() {
+            if (stopwatchRunning) return;
+            
+            stopwatchRunning = true;
+            stopwatchStartTime = Date.now() - stopwatchElapsed;
+            
+            stopwatchInterval = setInterval(() => {
+                stopwatchElapsed = Date.now() - stopwatchStartTime;
+                document.getElementById('stopwatch-display').textContent = formatStopwatchTime(stopwatchElapsed);
+            }, 10);
+        }
+
+        function pauseStopwatch() {
+            if (!stopwatchRunning) return;
+            
+            stopwatchRunning = false;
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+        }
+
+        function lapStopwatch() {
+            if (!stopwatchRunning) return;
+            
+            const currentTime = Date.now() - stopwatchStartTime;
+            const lapContainer = document.getElementById('lap-times');
+            
+            const lapDiv = document.createElement('div');
+            lapDiv.className = 'lap-time';
+            lapDiv.textContent = `Mezičas ${lapNumber}: ${formatStopwatchTime(currentTime)}`;
+            
+            lapContainer.appendChild(lapDiv);
+            lapNumber++;
+        }
+
+        function resetStopwatch() {
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+            
+            stopwatchRunning = false;
+            stopwatchElapsed = 0;
+            stopwatchStartTime = 0;
+            lapNumber = 1;
+            
+            document.getElementById('stopwatch-display').textContent = '00:00:00:000';
+            document.getElementById('lap-times').innerHTML = '';
+        }
+
+        // INTERVALOVÝ ČASOVAČ
+        function startInterval() {
+            if (intervalTimer) return;
+            
+            if (intervalTime === 0) {
+                const workMinutes = parseInt(document.getElementById('work-minutes').value) || 25;
+                intervalTime = workMinutes * 60;
+                intervalTotalTime = intervalTime;
+                totalCycles = parseInt(document.getElementById('total-cycles').value) || 4;
+                currentCycle = 1;
+                isWorkTime = true;
+                updateIntervalDisplay();
+            }
+            
+            intervalTimer = setInterval(() => {
+                intervalTime--;
+                updateIntervalDisplay();
+                
+                const progress = ((intervalTotalTime - intervalTime) / intervalTotalTime) * 100;
+                document.getElementById('interval-progress').style.width = progress + '%';
+                
+                if (intervalTime <= 0) {
+                    playAlarmSound();
+                    
+                    if (isWorkTime) {
+                        // Přepnout na pauzu
+                        const breakMinutes = parseInt(document.getElementById('break-minutes').value) || 5;
+                        intervalTime = breakMinutes * 60;
+                        intervalTotalTime = intervalTime;
+                        isWorkTime = false;
+                    } else {
+                        // Přepnout na práci nebo ukončit
+                        currentCycle++;
+                        if (currentCycle <= totalCycles) {
+                            const workMinutes = parseInt(document.getElementById('work-minutes').value) || 25;
+                            intervalTime = workMinutes * 60;
+                            intervalTotalTime = intervalTime;
+                            isWorkTime = true;
+                        } else {
+                            clearInterval(intervalTimer);
+                            intervalTimer = null;
+                            alert('Všechny cykly dokončeny!');
+                            return;
+                        }
+                    }
+                    
+                    document.getElementById('interval-progress').style.width = '0%';
+                    updateIntervalDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateIntervalDisplay() {
+            const status = isWorkTime ? 'PRÁCE' : 'PAUZA';
+            document.getElementById('interval-display').textContent = `${status}: ${formatTimeShort(intervalTime)}`;
+            document.getElementById('cycle-counter').textContent = `Cyklus: ${currentCycle}/${totalCycles}`;
+        }
+
+        function pauseInterval() {
+            if (intervalTimer) {
+                clearInterval(intervalTimer);
+                intervalTimer = null;
+            }
+        }
+
+        function resetInterval() {
+            clearInterval(intervalTimer);
+            intervalTimer = null;
+            intervalTime = 0;
+            currentCycle = 0;
+            isWorkTime = true;
+            document.getElementById('interval-display').textContent = 'PRÁCE: 00:00';
+            document.getElementById('interval-progress').style.width = '0%';
+            document.getElementById('cycle-counter').textContent = 'Cyklus: 0/4';
+        }
+
+        // POMODORO
+        function startPomodoro() {
+            if (pomodoroTimer) return;
+            
+            pomodoroTimer = setInterval(() => {
+                pomodoroTime--;
+                document.getElementById('pomodoro-display').textContent = formatTimeShort(pomodoroTime);
+                
+                const progress = ((pomodoroTotalTime - pomodoroTime) / pomodoroTotalTime) * 100;
+                document.getElementById('pomodoro-progress').style.width = progress + '%';
+                
+                if (pomodoroTime <= 0) {
+                    playAlarmSound();
+                    
+                    if (pomodoroIsWork) {
+                        pomodoroCount++;
+                        if (pomodoroCount % 4 === 0) {
+                            // Dlouhá pauza
+                            pomodoroTime = 15 * 60;
+                            pomodoroTotalTime = 15 * 60;
+                            document.getElementById('pomodoro-status').textContent = 'DLOUHÁ PAUZA';
+                        } else {
+                            // Krátká pauza
+                            pomodoroTime = 5 * 60;
+                            pomodoroTotalTime = 5 * 60;
+                            document.getElementById('pomodoro-status').textContent = 'KRÁTKÁ PAUZA';
+                        }
+                        pomodoroIsWork = false;
+                    } else {
+                        // Zpět na práci
+                        pomodoroTime = 25 * 60;
+                        pomodoroTotalTime = 25 * 60;
+                        pomodoroIsWork = true;
+                        document.getElementById('pomodoro-status').textContent = 'PRÁCE';
+                    }
+                    
+                    document.getElementById('pomodoro-counter').textContent = `Pomodoro: ${pomodoroCount}/4`;
+                    document.getElementById('pomodoro-progress').style.width = '0%';
+                }
+            }, 1000);
+        }
+
+        function pausePomodoro() {
+            if (pomodoroTimer) {
+                clearInterval(pomodoroTimer);
+                pomodoroTimer = null;
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroTimer);
+            pomodoroTimer = null;
+            pomodoroTime = 25 * 60;
+            pomodoroTotalTime = 25 * 60;
+            pomodoroCount = 0;
+            pomodoroIsWork = true;
+            document.getElementById('pomodoro-display').textContent = '25:00';
+            document.getElementById('pomodoro-progress').style.width = '0%';
+            document.getElementById('pomodoro-status').textContent = 'PŘIPRAVEN NA PRÁCI';
+            document.getElementById('pomodoro-counter').textContent = 'Pomodoro: 0/4';
+        }
+
+        // SVĚTOVÉ HODINY
+        function updateWorldClocks() {
+            const now = new Date();
+            
+            const timezones = {
+                'prague': 'Europe/Prague',
+                'london': 'Europe/London',
+                'newyork': 'America/New_York',
+                'tokyo': 'Asia/Tokyo',
+                'sydney': 'Australia/Sydney',
+                'la': 'America/Los_Angeles'
+            };
+            
+            for (const [city, timezone] of Object.entries(timezones)) {
+                const time = now.toLocaleTimeString('cs-CZ', {
+                    timeZone: timezone,
+                    hour12: false
+                });
+                document.getElementById(`${city}-time`).textContent = time;
+            }
+        }
+
+        // ALARMY
+        function addAlarm() {
+            const name = document.getElementById('alarm-name').value || 'Budík';
+            const time = document.getElementById('alarm-time').value;
+            
+            if (!time) return;
+            
+            const alarm = { name, time, id: Date.now() };
+            alarms.push(alarm);
+            updateAlarmList();
+            
+            document.getElementById('alarm-name').value = '';
+            document.getElementById('alarm-time').value = '';
+        }
+
+        function removeAlarm(id) {
+            alarms = alarms.filter(alarm => alarm.id !== id);
+            updateAlarmList();
+        }
+
+        function updateAlarmList() {
+            const list = document.getElementById('alarm-list');
+            list.innerHTML = '';
+            
+            alarms.forEach(alarm => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;';
+                div.innerHTML = `
+                    <span>${alarm.name} - ${alarm.time}</span>
+                    <button onclick="removeAlarm(${alarm.id})" style="background: #ff4444; padding: 5px 10px; font-size: 0.8rem;">Smazat</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function checkAlarms() {
+            const now = new Date();
+            const currentTime = now.toTimeString().slice(0, 5);
+            
+            alarms.forEach(alarm => {
+                if (alarm.time === currentTime && !alarm.triggered) {
+                    alarm.triggered = true;
+                    playAlarmSound();
+                    alert(`ALARM: ${alarm.name}`);
+                    
+                    // Reset trigger po minutě
+                    setTimeout(() => {
+                        alarm.triggered = false;
+                    }, 60000);
+                }
+            });
+        }
+
+        // Inicializace
+        function init() {
+            // Nastavit aktuální čas pro alarm
+            const now = new Date();
+            const timeString = now.toTimeString().slice(0, 5);
+            document.getElementById('alarm-time').value = timeString;
+            
+            // Spustit světové hodiny
+            updateWorldClocks();
+            setInterval(updateWorldClocks, 1000);
+            
+            // Spustit kontrolu alarmů
+            setInterval(checkAlarms, 1000);
+        }
+
+        // Spustit při načtení stránky
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
