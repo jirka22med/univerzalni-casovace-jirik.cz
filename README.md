@@ -1,0 +1,1 @@
+# univerzalni-casovace-jirik.cz
